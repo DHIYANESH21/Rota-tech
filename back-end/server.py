@@ -1,21 +1,34 @@
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 from pymongo import MongoClient
 app = Flask(__name__)
-MONGO_URI="mongodb+srv://kabilrsit:awcgkyuCJCgmStHy@projects.vifrcka.mongodb.net/"
-client = MongoClient(MONGO_URI)
-try:
-    client.admin.command('ping')
-    print("✅ MongoDB connection successful!")
-except Exception as e:
-    print("❌ MongoDB connection failed:", e)
+
+client = MongoClient('mongodb+srv://tskailash20:tskailashts0807%40%40@cluster0.io3sx5a.mongodb.net/edu_tech?retryWrites=true&w=majority&appName=Cluster0')
 db = client['mydatabase']
-collection = db['users']
-@app.route('/')
-def home():
-    return "Flask + MongoDB Atlas is working!"
-@app.route('/users')
+collection = db['users']  
+
+@app.route('/add_user', methods=['POST'])
+def add_user():
+    try:
+        # Force JSON parsing even if Content-Type is wrong
+        data = request.get_json(force=True)
+
+        name = data.get('name')
+        age = data.get('age')
+
+        if not name or not age:
+            return jsonify({"error": "Missing data"}), 400
+
+        user = {"name": name, "age": age}
+        collection.insert_one(user)
+
+        return jsonify({"message": "User added successfully"}), 201
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to add user: {str(e)}"}), 500
+
+@app.route('/users', methods=['GET'])
 def get_users():
-    users = list(collection.find({}, {'_id': 0}))  
+    users = list(collection.find({}, {"_id": 0}))
     return jsonify(users)
 if __name__ == '__main__':
     app.run(debug=True)
